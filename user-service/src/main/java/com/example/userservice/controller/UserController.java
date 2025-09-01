@@ -1,5 +1,6 @@
 package com.example.userservice.controller;
 
+import com.example.userservice.dto.UserLoginRequest;
 import com.example.userservice.dto.UserRegistrationRequest;
 import com.example.userservice.entity.User;
 import com.example.userservice.service.UserService;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -17,25 +19,25 @@ public class UserController {
 
     private final UserService service;
 
-    // ✅ Register a user
+    //  Register a user
     @PostMapping("/register")
     public ResponseEntity<User> register(@Valid @RequestBody UserRegistrationRequest request) {
         return ResponseEntity.ok(service.register(request));
     }
 
-    // ✅ Get user by ID
+    // Get user by ID
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getUserById(id));
     }
 
-    // ✅ Get all users
+    //  Get all users
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         return ResponseEntity.ok(service.getAllUsers());
     }
 
-    // ✅ Get user by email
+    // Get user by email
     @GetMapping("/email/{email}")
     public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
         return ResponseEntity.ok(service.getUserByEmail(email));
@@ -46,6 +48,45 @@ public class UserController {
     public ResponseEntity<User> getUserByMobile(@PathVariable String mobile) {
         return ResponseEntity.ok(service.getUserByMobile(mobile));
     }
+
+    // Get users by account status
+//    @GetMapping("/status/{status}")
+//    public ResponseEntity<List<User>> getUsersByAccountStatus(@PathVariable User.AccountStatus status) {
+//        return ResponseEntity.ok(service.getUsersByAccountStatus(status));
+//    }
+
+    @PostMapping("/login")
+    public ResponseEntity<User> login(@RequestBody UserLoginRequest request) {
+        User user = service.login(request.getUsername(), request.getPassword());
+        return ResponseEntity.ok(user);
+    }
+
+    @PostMapping("/login/mpin")
+    public ResponseEntity<User> loginWithMpin(@RequestBody Map<String, String> request) {
+        String identifier = request.get("mobile/email"); // mobile or email
+        String mpin = request.get("mpin");
+        return ResponseEntity.ok(service.loginWithMpin(identifier, mpin));
+    }
+
+    @PostMapping("/{id}/deactivate")
+    public ResponseEntity<String> deactivateUser(@PathVariable Long id) {
+        service.deactivateAccount(id);
+        return ResponseEntity.ok("User account deactivated successfully.");
+    }
+
+    // GET /api/users/status/ACTIVE
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<User>> getUsersByAccountStatus(@PathVariable String status) {
+        User.AccountStatus accountStatus;
+        try {
+            accountStatus = User.AccountStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+        List<User> users = service.getUsersByAccountStatus(accountStatus);
+        return ResponseEntity.ok(users);
+    }
+
 }
 
 

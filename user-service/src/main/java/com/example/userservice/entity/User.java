@@ -29,6 +29,10 @@ public class User {
     @Column(unique = true, nullable = false)
     private String pan;
 
+    @Column(unique = true, nullable = false)
+    private String username;
+
+
 //    @Column(unique = true, nullable = false)
 //    private String mobile;
 
@@ -54,6 +58,42 @@ public class User {
     private int failedMpinAttempts;
 
     private LocalDateTime accountLockedUntil;
+    private String address;
+
+    private String state;
+
+    @Column(length = 10)
+    private String pincode;
+
+    private String country;
+
+    private LocalDateTime createdAt;
+
+    private String gender;
+
+    @Enumerated(EnumType.STRING)
+    private AccountStatus accountStatus;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        if (accountStatus == null) {
+            accountStatus = AccountStatus.ACTIVE;
+        }
+    }
+
+    public enum AccountStatus {
+        ACTIVE, LOCKED, DEACTIVATED
+    }
+
+    public enum Role {
+        USER, ADMIN
+    }
+
+
 }
 
 

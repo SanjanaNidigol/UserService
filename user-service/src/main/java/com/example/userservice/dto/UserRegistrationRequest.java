@@ -1,5 +1,6 @@
 package com.example.userservice.dto;
 
+import com.example.userservice.entity.User;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.time.LocalDate;
@@ -25,6 +26,9 @@ public class UserRegistrationRequest {
     private String mobile;
 
     @NotBlank
+    private String username;
+
+    @NotBlank
     @Email
     private String email;
 
@@ -33,10 +37,21 @@ public class UserRegistrationRequest {
     private String password;
 
     @NotBlank
-    @Size(min = 8, max = 128)
-    private String confirmPassword;
-
-    @NotBlank
     @Pattern(regexp = "\\d{4,6}", message = "MPIN must be 4-6 digits")
     private String mpin;
+
+    // New fields
+    private String address;
+
+    private String state;
+
+    @Size(max = 10)
+    private String pincode;
+
+    private String country;
+
+    private String gender;
+
+//    @NotNull
+//    private User.Role role;
 }

@@ -8,6 +8,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -19,11 +20,24 @@ public class UserService {
 
     // Register a new user and publish event to Kafka
     public User register(UserRegistrationRequest request) {
-        if (!request.getPassword().equals(request.getConfirmPassword())) {
-            throw new IllegalArgumentException("Passwords do not match");
-        }
+//        if (!request.getPassword().equals(request.getConfirmPassword())) {
+//            throw new IllegalArgumentException("Passwords do not match");
+//        }
+
+//        User user = User.builder()
+//                .firstName(request.getFirstName())
+//                .lastName(request.getLastName())
+//                .dob(request.getDob())
+//                .pan(request.getPan())
+//                .mobile(request.getMobile())
+//                .email(request.getEmail())
+//                .passwordHash(BCrypt.hashpw(request.getPassword(), BCrypt.gensalt()))
+//                .mpin(request.getMpin())
+//                .failedMpinAttempts(0)
+//                .build();
 
         User user = User.builder()
+                .username(request.getUsername())
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .dob(request.getDob())
@@ -33,12 +47,23 @@ public class UserService {
                 .passwordHash(BCrypt.hashpw(request.getPassword(), BCrypt.gensalt()))
                 .mpin(request.getMpin())
                 .failedMpinAttempts(0)
+                .address(request.getAddress())
+                .state(request.getState())
+                .pincode(request.getPincode())
+                .country(request.getCountry())
+                .gender(request.getGender())
+                .accountStatus(User.AccountStatus.ACTIVE)
+                .role(User.Role.USER)
                 .build();
 
         User savedUser = userRepository.save(user);
 
         // ✅ Publish event to Kafka
-        kafkaTemplate.send("user-events", "USER_REGISTERED:" + savedUser.getId());
+//        kafkaTemplate.send("user-events", "USER_REGISTERED:" + savedUser.getId());
+//
+//        return savedUser;
+        String kafkaMessage = "USER_REGISTERED:" + savedUser.getId() + ":" + savedUser.getEmail();
+        kafkaTemplate.send("user-events", kafkaMessage);
 
         return savedUser;
     }
@@ -65,6 +90,94 @@ public class UserService {
         return userRepository.findByMobile(mobile)
                 .orElseThrow(() -> new RuntimeException("User not found with mobile: " + mobile));
     }
+
+
+
+    // Get all users by their account status
+    public List<User> getUsersByAccountStatus(User.AccountStatus status) {
+        return userRepository.findByAccountStatus(status);
+    }
+
+    public User login(String username, String password) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Check account lock first
+        if (user.getAccountStatus() == User.AccountStatus.LOCKED
+                && user.getAccountLockedUntil() != null
+                && user.getAccountLockedUntil().isAfter(LocalDateTime.now())) {
+            throw new RuntimeException("Account is locked until " + user.getAccountLockedUntil());
+        }
+
+        if (!BCrypt.checkpw(password, user.getPasswordHash())) {
+            throw new RuntimeException("Invalid password");
+        }
+
+        if (user.getAccountStatus() == User.AccountStatus.DEACTIVATED) {
+            throw new RuntimeException("Account is deactivated. Contact support.");
+        }
+
+        if (user.getAccountStatus() != User.AccountStatus.ACTIVE) {
+            throw new RuntimeException("Account is not active");
+        }
+
+        return user; // login successful
+    }
+
+
+    public User loginWithMpin(String identifier, String mpin) {
+        User user = userRepository.findByMobile(identifier)
+                .or(() -> userRepository.findByEmail(identifier))
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getAccountStatus() == User.AccountStatus.DEACTIVATED) {
+            throw new RuntimeException("Account is deactivated. Contact support.");
+        }
+
+        // Check if account is locked
+        if (user.getAccountStatus() == User.AccountStatus.LOCKED
+                && user.getAccountLockedUntil() != null
+                && user.getAccountLockedUntil().isAfter(LocalDateTime.now())) {
+            throw new RuntimeException("Account is locked until " + user.getAccountLockedUntil());
+        }
+
+
+
+
+        if (!user.getMpin().equals(mpin)) {
+            int attempts = user.getFailedMpinAttempts() + 1;
+            user.setFailedMpinAttempts(attempts);
+
+            if (attempts >= 3) {
+                user.setAccountStatus(User.AccountStatus.LOCKED);
+                user.setAccountLockedUntil(LocalDateTime.now().plusDays(1));
+                user.setFailedMpinAttempts(0);
+            }
+
+            userRepository.save(user);
+            throw new RuntimeException("Invalid MPIN. Attempt " + attempts + " of 3.");
+        }
+
+        // Successful login
+        user.setFailedMpinAttempts(0);
+        user.setAccountStatus(User.AccountStatus.ACTIVE);
+        user.setAccountLockedUntil(null);
+        userRepository.save(user);
+
+        return user;
+    }
+
+
+    public void deactivateAccount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setAccountStatus(User.AccountStatus.DEACTIVATED);
+        userRepository.save(user);
+    }
+
+
+
 }
 
 
