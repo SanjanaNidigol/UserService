@@ -1,5 +1,4 @@
 package com.example.userservice.controller;
-
 import com.example.userservice.dto.UserLoginRequest;
 import com.example.userservice.dto.UserRegistrationRequest;
 import com.example.userservice.entity.User;
@@ -8,7 +7,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
 
@@ -49,12 +47,6 @@ public class UserController {
         return ResponseEntity.ok(service.getUserByMobile(mobile));
     }
 
-    // Get users by account status
-//    @GetMapping("/status/{status}")
-//    public ResponseEntity<List<User>> getUsersByAccountStatus(@PathVariable User.AccountStatus status) {
-//        return ResponseEntity.ok(service.getUsersByAccountStatus(status));
-//    }
-
     @PostMapping("/login")
     public ResponseEntity<User> login(@RequestBody UserLoginRequest request) {
         User user = service.login(request.getUsername(), request.getPassword());
@@ -66,6 +58,24 @@ public class UserController {
         String identifier = request.get("mobile/email"); // mobile or email
         String mpin = request.get("mpin");
         return ResponseEntity.ok(service.loginWithMpin(identifier, mpin));
+    }
+
+    @PutMapping("/{userId}/update-password")
+    public ResponseEntity<String> updatePassword(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> payload) {
+        service.updatePassword(userId, payload.get("oldPassword"), payload.get("newPassword"));
+        return ResponseEntity.ok("Password updated successfully");
+    }
+
+    @PutMapping("/{userId}/reset-mpin")
+    public ResponseEntity<String> resetMpin(
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> payload) {
+
+        String newMpin = payload.get("newMpin");
+        service.resetMpin(userId, newMpin);
+        return ResponseEntity.ok("MPIN reset successfully");
     }
 
     @PostMapping("/{id}/deactivate")
@@ -87,47 +97,10 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
+    @DeleteMapping("/email/{email}")
+    public ResponseEntity<String> deleteUserByEmail(@PathVariable String email) {
+        service.deleteUserByEmail(email);
+        return ResponseEntity.ok("User with email " + email + " deleted successfully.");
+    }
+
 }
-
-
-//package com.example.userservice.controller;
-//
-//import com.example.userservice.entity.User;
-//import com.example.userservice.service.UserService;
-//import jakarta.validation.constraints.Email;
-//import jakarta.validation.constraints.NotBlank;
-//import lombok.Data;
-//import lombok.RequiredArgsConstructor;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.web.bind.annotation.*;
-//
-//@RestController
-//@RequestMapping("/api/users")
-//@RequiredArgsConstructor
-//public class UserController {
-//
-//    private final UserService service;
-//
-//    @PostMapping("/register")
-//    public ResponseEntity<User> register(@RequestBody RegisterRequest req) {
-//        return ResponseEntity.ok(service.register(req.getEmail(), req.getMpin()));
-//    }
-//
-//    @PostMapping("/{id}/verify-mpin")
-//    public ResponseEntity<Boolean> verify(@PathVariable Long id, @RequestBody VerifyRequest req) {
-//        return ResponseEntity.ok(service.verifyMpin(id, req.getMpin()));
-//    }
-//
-//    @PostMapping("/{id}/change-password")
-//    public ResponseEntity<Void> changePassword(@PathVariable Long id, @RequestBody ChangePasswordRequest req) {
-//        service.changePassword(id, req.getNewPassword());
-//        return ResponseEntity.noContent().build();
-//    }
-//
-//    @Data
-//    public static class RegisterRequest { @Email String email; @NotBlank String mpin; }
-//    @Data
-//    public static class VerifyRequest { @NotBlank String mpin; }
-//    @Data
-//    public static class ChangePasswordRequest { @NotBlank String newPassword; }
-//}

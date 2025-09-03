@@ -10,7 +10,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfig {
 
-    // Keep endpoints public for now (intended for dev). We'll use BCrypt for hashing.
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http

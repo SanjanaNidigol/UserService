@@ -1,5 +1,4 @@
 package com.example.userservice.dto;
-
 import com.example.userservice.entity.User;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -37,10 +36,9 @@ public class UserRegistrationRequest {
     private String password;
 
     @NotBlank
-    @Pattern(regexp = "\\d{4,6}", message = "MPIN must be 4-6 digits")
+    @Pattern(regexp = "(\\d{4}|\\d{6})", message = "MPIN must be exactly 4 or 6 digits")
     private String mpin;
 
-    // New fields
     private String address;
 
     private String state;
