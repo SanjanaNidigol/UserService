@@ -3,9 +3,13 @@ import com.example.userservice.dto.UserRegistrationRequest;
 import com.example.userservice.entity.User;
 import com.example.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
@@ -146,6 +150,13 @@ public class UserService {
         userRepository.save(user);
 
         return user;
+    }
+
+    @GetMapping("/{userId}/email")
+    public ResponseEntity<String> getUserEmail(@PathVariable Long userId) {
+        return userRepository.findById(userId)
+                .map(user -> ResponseEntity.ok(user.getEmail()))
+                .orElse(ResponseEntity.notFound().build());
     }
 
 

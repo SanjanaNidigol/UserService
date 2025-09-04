@@ -42,6 +42,11 @@ public class UserController {
     }
 
 
+//    @GetMapping("/{userId}/email")
+//    public ResponseEntity<String> getUserEmailById(@PathVariable Long userId) {
+//        return ResponseEntity.ok(service.getUserEmailById(userId));
+//    }
+
     @GetMapping("/mobile/{mobile}")
     public ResponseEntity<User> getUserByMobile(@PathVariable String mobile) {
         return ResponseEntity.ok(service.getUserByMobile(mobile));
